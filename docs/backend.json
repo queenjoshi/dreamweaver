@@ -1,0 +1,193 @@
+{
+  "entities": {
+    "UserAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserAccount",
+      "type": "object",
+      "description": "Stores user account information, linking to profile and authentication details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserAccount entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "User's chosen username."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "profileId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserAccount 1:1 UserProfile)"
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date the account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "profileId",
+        "creationDate"
+      ]
+    },
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Stores user profile information, including dream streak, energy meter, and NFT collection details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "dreamStreak": {
+          "type": "number",
+          "description": "The user's current dream streak."
+        },
+        "energyMeter": {
+          "type": "number",
+          "description": "The user's current energy level."
+        },
+        "nftCollectionIds": {
+          "type": "array",
+          "description": "References to NFTs. (Relationship: UserProfile 1:N NFT)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "Date the profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "dreamStreak",
+        "energyMeter",
+        "nftCollectionIds",
+        "lastUpdated"
+      ]
+    },
+    "NFT": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "NFT",
+      "type": "object",
+      "description": "Represents a dream-inspired NFT.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the NFT entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the NFT."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the NFT."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the NFT image.",
+          "format": "uri"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N NFT)"
+        },
+        "mintDate": {
+          "type": "string",
+          "description": "Date the NFT was minted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "imageUrl",
+        "ownerId",
+        "mintDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/accounts/{accountId}",
+        "definition": {
+          "entityName": "UserAccount",
+          "schema": {
+            "$ref": "#/backend/entities/UserAccount"
+          },
+          "description": "Stores user account information.  Access is restricted to the user with the matching userId. Includes 'userId' as a denormalized authorization field.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "accountId",
+              "description": "The unique identifier for the user account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/profiles/{profileId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information. Access is restricted to the user with the matching userId. Includes 'userId' as a denormalized authorization field.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "profileId",
+              "description": "The unique identifier for the user profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/nfts/{nftId}",
+        "definition": {
+          "entityName": "NFT",
+          "schema": {
+            "$ref": "#/backend/entities/NFT"
+          },
+          "description": "Stores NFT data. Access is restricted to the user with the matching userId, which matches the NFT's ownerId. Includes denormalized 'ownerId' field for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "nftId",
+              "description": "The unique identifier for the NFT."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure prioritizes security, scalability, and debuggability based on the core design principles. User authentication is handled by Firebase Auth, and the Firestore structure is designed to securely store user account and profile data, along with NFTs. The structure leverages path-based ownership for user-specific data (profiles, NFTs) ensuring that security rules can easily validate ownership without complex `get()` calls. The design emphasizes authorization independence via denormalization, ensuring atomic operations and clear intent. Specifically, the `ownerId` field in the `NFT` collection enables secure listing and querying of NFTs owned by a specific user without requiring a `get()` call to the `UserProfile`. The segregation of user-specific data into separate collections based on the user's UID ensures a homogeneous security posture, simplifying rules. This structure directly supports account login and feed access, where the user's authentication state is used to grant them access to their profiles and associated NFTs."
+  }
+}

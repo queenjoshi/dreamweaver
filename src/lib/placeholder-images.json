@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "dream-1",
+      "description": "A surreal depiction of a clock melting over a floating island in a cosmic sky.",
+      "imageUrl": "https://images.unsplash.com/photo-1670869099480-5a8a85369fda?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzdXJyZWFsJTIwY2xvY2t8ZW58MHx8fHwxNzY3MjQ0NTg0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "surreal clock"
+    },
+    {
+      "id": "dream-2",
+      "description": "An underwater cityscape with bioluminescent creatures and coral skyscrapers.",
+      "imageUrl": "https://images.unsplash.com/photo-1662103788383-2f36f3255cf2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx1bmRlcndhdGVyJTIwY2l0eXxlbnwwfHx8fDE3NjcyMDgxNzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "underwater city"
+    },
+    {
+      "id": "dream-3",
+      "description": "A forest of crystalline trees with glowing rivers of light.",
+      "imageUrl": "https://images.unsplash.com/photo-1728667273557-aaa0ecf40364?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjcnlzdGFsJTIwZm9yZXN0fGVufDB8fHx8MTc2NzI0NDU4NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "crystal forest"
+    },
+    {
+      "id": "dream-4",
+      "description": "An astronaut discovering a golden artifact on a desert planet with two suns.",
+      "imageUrl": "https://images.unsplash.com/photo-1712512161668-ff1651e40c6a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c3BhY2UlMjBhc3Ryb25hdXR8ZW58MHx8fHwxNzY3MjQ0NTg0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "space astronaut"
+    },
+    {
+      "id": "dream-5",
+      "description": "A library where books fly like birds between endless shelves.",
+      "imageUrl": "https://images.unsplash.com/photo-1633522712607-0f45f468c0ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxmbHlpbmclMjBib29rc3xlbnwwfHx8fDE3NjcyNDQ1ODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "flying books"
+    },
+    {
+      "id": "dream-6",
+      "description": "Portrait of a cyborg with intricate golden circuitry visible under translucent skin.",
+      "imageUrl": "https://images.unsplash.com/photo-1688588343159-c0694f3ed81f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjeWJvcmclMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjcxNjQwMDR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cyborg portrait"
+    }
+  ]
+}

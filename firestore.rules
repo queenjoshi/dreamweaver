@@ -1,0 +1,148 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model where users have
+ * complete control over their own data, and no access to anyone else's. It is designed for
+ * applications where user data is private and siloed.
+ *
+ * Data Structure: All data is organized under a top-level `users` collection. Each user's
+ * data, including their account, profile, and NFTs, is nested within their own document,
+ * identified by their unique user ID (e.g., /users/{userId}/...).
+ *
+ * Key Security Decisions:
+ * - User data is private: All reads and writes to a user's data tree (/users/{userId}) are
+ *   restricted to that specific authenticated user.
+ * - User listing is disabled: It is not possible to query the top-level `/users` collection
+ *   to prevent user enumeration attacks and protect user privacy.
+ * - Ownership is enforced by path: The structure `/users/{userId}` is the primary mechanism
+ *   for enforcing ownership.
+ *
+ * Denormalization for Authorization: To ensure fast and secure authorization checks, these
+ * rules expect that documents within a user's data tree contain a denormalized ownership
+ * field (e.g., `userId` or `ownerId`). This field must match the `{userId}` from the path,
+ * ensuring data integrity and preventing documents from being moved or associated with the
+ * wrong user. This avoids slow and costly `get()` calls in rules.
+ *
+ * Structural Segregation: The data model naturally segregates each user's private data
+ * by placing it in subcollections under their unique user document. This is a secure and
+ * performant pattern that simplifies access control logic.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the fundamental check for all ownership-based security.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks for ownership on an existing resource. Used for update/delete operations
+     * to ensure the document exists before attempting to modify it.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * On create, validates that the new document's internal 'userId' field
+     * matches the user's auth UID, ensuring relational integrity.
+     */
+    function isOwnerOnCreate(userId) {
+      return isOwner(userId) && request.resource.data.userId == userId;
+    }
+    
+    /**
+     * On update, validates that the internal 'userId' field cannot be changed.
+     */
+    function isUserIdImmutable() {
+        return request.resource.data.userId == resource.data.userId;
+    }
+    
+    /**
+     * On create, validates that the new NFT's internal 'ownerId' field
+     * matches the user's auth UID, ensuring relational integrity.
+     */
+    function isNftOwnerOnCreate(userId) {
+      return isOwner(userId) && request.resource.data.ownerId == userId;
+    }
+    
+    /**
+     * On update, validates that the NFT's 'ownerId' field cannot be changed.
+     */
+    function isNftOwnerIdImmutable() {
+      return request.resource.data.ownerId == resource.data.ownerId;
+    }
+    
+    // ------------------------------------------------------------------------
+    // User Root Document Rules
+    // ------------------------------------------------------------------------
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // ------------------------------------------------------------------------
+    // User Profile Rules (/users/{userId}/profiles/{profileId})
+    // ------------------------------------------------------------------------
+    match /users/{userId}/profiles/{profileId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwnerOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isUserIdImmutable();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // User NFT Rules (/users/{userId}/nfts/{nftId}) - Private User Collection
+    // ------------------------------------------------------------------------
+    match /users/{userId}/nfts/{nftId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isNftOwnerOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isNftOwnerIdImmutable();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // ------------------------------------------------------------------------
+    // Public NFT Gallery Rules (/publicNfts/{nftId})
+    // ------------------------------------------------------------------------
+    match /publicNfts/{nftId} {
+        allow get: if true;
+        allow list: if true;
+        // Writes should only come from a trusted backend or a validated user action.
+        // For this app, we'll allow any signed-in user to add to the public gallery,
+        // as the creation happens in the same step as adding to their private collection.
+        allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+        // Do not allow updates or deletes from the client for the public gallery.
+        allow update: if false;
+        allow delete: if false;
+    }
+
+    // ------------------------------------------------------------------------
+    // Platform Stats Rules (/platform/stats)
+    // ------------------------------------------------------------------------
+     match /platform/{docId} {
+        allow get: if true; // Publicly readable
+        allow list: if true; // Publicly listable
+        allow create: if isSignedIn(); // Can be created by any signed-in user
+        allow update: if isSignedIn(); // Can be updated by any signed-in user
+        allow delete: if false; // Should not be deletable
+     }
+  }
+}
