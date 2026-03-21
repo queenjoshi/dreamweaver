@@ -1,4 +1,4 @@
-'use server';
+"use client";
 /**
  * @fileOverview A flow to generate an ambient music track.
  *
