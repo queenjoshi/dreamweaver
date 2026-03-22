@@ -19,11 +19,10 @@ import {
 
 import { useToast } from "@/hooks/use-toast";
 import { base } from "viem/chains";
-import { parseEther } from "viem";
+import { parseEther, encodeAbiParameters } from "viem";
 import { useEffect, useState } from "react";
 
 import { Dream } from "@/lib/data";
-import { uploadToIpfs } from "@/ai/flows/upload-to-ipfs";
 
 import { useFirestore } from "@/firebase";
 import { doc, runTransaction } from "firebase/firestore";
@@ -57,12 +56,12 @@ async function incrementMintCount(firestore: any) {
 
   try {
     await runTransaction(firestore, async (tx) => {
-      const docSnap = await tx.get(statsRef);
+      const snap = await tx.get(statsRef);
 
-      if (!docSnap.exists()) {
+      if (!snap.exists()) {
         tx.set(statsRef, { totalMints: 1 });
       } else {
-        const count = (docSnap.data().totalMints || 0) + 1;
+        const count = (snap.data().totalMints || 0) + 1;
         tx.update(statsRef, { totalMints: count });
       }
     });
@@ -104,44 +103,59 @@ export default function MintButton({ dream }: { dream: Dream }) {
     try {
       setIsUploading(true);
 
-      toast({
-        title: "Uploading metadata...",
+      toast({ title: "Uploading metadata..." });
+
+      /* ✅ Call API instead of server function */
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: dream.title,
+          description: dream.summary,
+          artDataUri: dream.artUrl,
+          author: dream.author,
+        }),
       });
 
-      const { metadataUrl } = await uploadToIpfs({
-        title: dream.title,
-        description: dream.summary,
-        artDataUri: dream.artUrl,
-        author: dream.author,
-      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+
+      const metadataUrl = data.metadataUrl;
 
       console.log("IPFS URL:", metadataUrl);
 
+      /* ✅ Generate tokenId */
       const tokenId = BigInt(Math.floor(Math.random() * 1_000_000_000));
 
-      const minterArgs = `0x000000000000000000000000${address.slice(
-        2
-      )}` as `0x${string}`;
+      /* ✅ Proper ABI encoding */
+      const minterArgs = encodeAbiParameters(
+        [{ type: "address" }],
+        [address]
+      );
+
+      toast({ title: "Minting NFT..." });
 
       await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: zora1155Abi,
         functionName: "mintWithRewards",
         args: [
-          address as `0x${string}`, // ✅ FIX
+          address,
           tokenId,
-          1n, // ✅ bigint
+          1n,
           minterArgs,
           "0x0000000000000000000000000000000000000000",
         ],
-        value: parseEther("0.0008"),
+        value: parseEther("0.0008"), // ⚠️ adjust if needed
         chainId: base.id,
       });
     } catch (err: any) {
-      console.error(err);
+      console.error("Mint error:", err);
+
       toast({
         title: "Mint failed",
-        description: err.message,
+        description: err.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
